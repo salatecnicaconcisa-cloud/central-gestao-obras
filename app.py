@@ -240,6 +240,94 @@ def painel_clima_online(nome_obra):
     except Exception:
         st.warning("O serviço de clima não respondeu agora. Os demais dados do sistema continuam disponíveis.")
 
+
+# ---------- V6 VISUAL CLARO / COLORIDO ----------
+st.markdown("""
+<style>
+:root { color-scheme: light; }
+.stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
+    background: linear-gradient(135deg,#f8fbff 0%,#f4f8fc 55%,#ffffff 100%) !important;
+    color:#10213d !important;
+}
+[data-testid="stHeader"] { background:rgba(255,255,255,.92) !important; }
+[data-testid="stSidebar"] {
+    background:linear-gradient(180deg,#eef6ff 0%,#ffffff 100%) !important;
+    border-right:1px solid #dce8f5;
+}
+[data-testid="stSidebar"] * { color:#17345c !important; }
+h1,h2,h3,h4,h5,h6,p,span,div { color:#10213d; }
+h1 { font-weight:850 !important; letter-spacing:-.02em; }
+h2,h3 { font-weight:800 !important; }
+
+[data-testid="stMetric"] {
+    background:#ffffff !important;
+    border:1px solid #dbe7f3 !important;
+    border-radius:18px !important;
+    padding:18px 20px !important;
+    box-shadow:0 6px 22px rgba(34,80,130,.08) !important;
+    min-height:120px;
+}
+[data-testid="stMetric"]:nth-of-type(4n+1){background:linear-gradient(135deg,#edf7ff,#ffffff)!important;}
+[data-testid="stMetric"]:nth-of-type(4n+2){background:linear-gradient(135deg,#fff4e8,#ffffff)!important;}
+[data-testid="stMetric"]:nth-of-type(4n+3){background:linear-gradient(135deg,#eafbf2,#ffffff)!important;}
+[data-testid="stMetric"]:nth-of-type(4n+4){background:linear-gradient(135deg,#f4edff,#ffffff)!important;}
+[data-testid="stMetricLabel"],[data-testid="stMetricLabel"] * {
+    color:#31577f !important; opacity:1 !important; font-weight:800 !important;
+    text-transform:uppercase; letter-spacing:.02em;
+}
+[data-testid="stMetricValue"],[data-testid="stMetricValue"] * {
+    color:#0c2344 !important; opacity:1 !important; font-weight:900 !important;
+}
+[data-testid="stMetricDelta"],[data-testid="stMetricDelta"] * { opacity:1 !important; }
+
+div[data-baseweb="select"] > div,
+[data-testid="stDateInput"] > div > div,
+[data-testid="stTextInput"] input,
+[data-testid="stNumberInput"] input {
+    background:#ffffff !important; color:#10213d !important;
+    border-color:#cddceb !important; border-radius:12px !important;
+}
+[data-testid="stWidgetLabel"],[data-testid="stWidgetLabel"] *,label,label * {
+    color:#17345c !important; opacity:1 !important; font-weight:750 !important;
+}
+.stButton > button, .stDownloadButton > button {
+    border-radius:12px !important; font-weight:800 !important;
+    box-shadow:0 4px 12px rgba(20,91,200,.12);
+}
+.stButton > button[kind="primary"] {
+    background:linear-gradient(90deg,#1677ff,#0b5fe5) !important;
+    color:white !important; border:0 !important;
+}
+[data-testid="stDataFrame"], [data-testid="stTable"] {
+    background:#ffffff !important; border-radius:16px !important;
+    box-shadow:0 5px 18px rgba(34,80,130,.06);
+}
+[data-testid="stAlert"] { border-radius:14px !important; }
+hr { border-color:#dce8f5 !important; }
+[data-testid="stCaptionContainer"],[data-testid="stCaptionContainer"] * {
+    color:#60758f !important; opacity:1 !important;
+}
+.block-container { max-width:1500px; padding-top:1.4rem; padding-bottom:3rem; }
+</style>
+""", unsafe_allow_html=True)
+
+
+# Tema visual claro para gráficos Plotly
+_plotly_chart_original = st.plotly_chart
+def _plotly_chart_claro(fig, *args, **kwargs):
+    try:
+        fig.update_layout(
+            template="plotly_white",
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="#17345c"),
+            margin=dict(l=20,r=20,t=45,b=20),
+        )
+    except Exception:
+        pass
+    return _plotly_chart_original(fig, *args, **kwargs)
+st.plotly_chart = _plotly_chart_claro
+
 st.title("🏗️ Central de Gestão de Obras")
 st.markdown('<div class="small">RDO • Horas-Homem • Máquinas • Caminhões • Combustível • Produtividade</div>',unsafe_allow_html=True)
 
