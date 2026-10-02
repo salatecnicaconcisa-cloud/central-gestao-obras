@@ -328,6 +328,114 @@ def _plotly_chart_claro(fig, *args, **kwargs):
     return _plotly_chart_original(fig, *args, **kwargs)
 st.plotly_chart = _plotly_chart_claro
 
+
+# ---------- V7 DASHBOARD EXECUTIVO CLARO ----------
+st.markdown("""
+<style>
+:root{color-scheme:light}
+html,body,[class*="css"]{font-family:Inter,Arial,sans-serif}
+.stApp,[data-testid="stAppViewContainer"]{
+ background:#f6f9fd!important;color:#10213d!important
+}
+[data-testid="stHeader"]{background:rgba(246,249,253,.92)!important}
+.block-container{max-width:1540px!important;padding:1.1rem 2rem 3rem!important}
+h1{font-size:2.45rem!important;color:#0b2245!important;font-weight:900!important;letter-spacing:-.04em}
+h2{color:#132d50!important;font-size:1.45rem!important;font-weight:850!important}
+h3{color:#17345c!important;font-weight:800!important}
+p,span,label,div{color:#17345c}
+[data-testid="stCaptionContainer"],[data-testid="stCaptionContainer"] *{color:#66809d!important}
+
+/* filtros */
+[data-baseweb="select"]>div,[data-testid="stDateInput"]>div>div,[data-testid="stTextInput"] input{
+ background:#fff!important;border:1px solid #d7e4f1!important;border-radius:12px!important;
+ box-shadow:0 2px 8px rgba(31,77,124,.04)!important;color:#10213d!important
+}
+[data-testid="stWidgetLabel"],[data-testid="stWidgetLabel"] *,label,label *{
+ color:#17345c!important;font-weight:800!important;opacity:1!important
+}
+
+/* cards KPI */
+[data-testid="stMetric"]{
+ background:#fff!important;border:1px solid #dce8f4!important;border-radius:18px!important;
+ padding:18px 20px!important;box-shadow:0 7px 24px rgba(34,79,124,.08)!important;
+ min-height:118px;position:relative;overflow:hidden
+}
+[data-testid="stMetric"]::before{
+ content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:#2484ff
+}
+[data-testid="column"]:nth-of-type(2n) [data-testid="stMetric"]::before{background:#ff9e2a}
+[data-testid="column"]:nth-of-type(3n) [data-testid="stMetric"]::before{background:#20b86a}
+[data-testid="column"]:nth-of-type(4n) [data-testid="stMetric"]::before{background:#8b5cf6}
+[data-testid="stMetricLabel"],[data-testid="stMetricLabel"] *{
+ color:#3d6388!important;font-size:.84rem!important;font-weight:900!important;
+ text-transform:uppercase;opacity:1!important
+}
+[data-testid="stMetricValue"],[data-testid="stMetricValue"] *{
+ color:#0b2245!important;font-size:2rem!important;font-weight:900!important;opacity:1!important
+}
+[data-testid="stMetricDelta"],[data-testid="stMetricDelta"] *{font-weight:800!important;opacity:1!important}
+
+/* botões */
+.stButton>button,.stDownloadButton>button{
+ border-radius:12px!important;font-weight:850!important;min-height:42px;
+ border:1px solid #cfe0f2!important
+}
+.stButton>button[kind="primary"]{
+ background:linear-gradient(90deg,#237cff,#0a64e8)!important;color:#fff!important;border:0!important
+}
+.stButton>button[kind="primary"] *{color:#fff!important}
+
+/* tabelas, alerts e containers */
+[data-testid="stDataFrame"],[data-testid="stTable"],[data-testid="stExpander"]{
+ background:#fff!important;border:1px solid #dce8f4!important;border-radius:16px!important;
+ box-shadow:0 5px 20px rgba(34,79,124,.06)!important;overflow:hidden
+}
+[data-testid="stAlert"]{border-radius:14px!important}
+hr{border-color:#dce8f4!important}
+
+/* abas */
+button[data-baseweb="tab"]{font-weight:800!important}
+button[data-baseweb="tab"][aria-selected="true"]{color:#126bdf!important}
+
+/* upload */
+[data-testid="stFileUploaderDropzone"]{
+ background:#fff!important;border:1.5px dashed #9fc4ec!important;border-radius:16px!important
+}
+
+/* Plotly container */
+[data-testid="stPlotlyChart"]{
+ background:#fff;border:1px solid #dce8f4;border-radius:18px;
+ box-shadow:0 5px 20px rgba(34,79,124,.06);padding:8px
+}
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<div style="background:linear-gradient(100deg,#edf6ff,#ffffff);border:1px solid #dce8f4;
+border-radius:20px;padding:18px 24px;margin-bottom:12px;box-shadow:0 6px 22px rgba(34,79,124,.06)">
+<div style="font-size:13px;font-weight:850;color:#2474d7;letter-spacing:.08em">PAINEL EXECUTIVO</div>
+<div style="font-size:15px;color:#60758f;margin-top:4px">RDO • Horas-Homem • Máquinas • Caminhões • Combustível • Produtividade • Clima</div>
+</div>
+""", unsafe_allow_html=True)
+
+
+_dashboard_plotly_original = st.plotly_chart
+def _dashboard_plotly(fig,*args,**kwargs):
+    try:
+        fig.update_layout(
+            template="plotly_white",
+            paper_bgcolor="rgba(0,0,0,0)", plot_bgcolor="rgba(0,0,0,0)",
+            font=dict(color="#17345c",family="Arial"),
+            title_font=dict(color="#10213d",size=18),
+            legend=dict(bgcolor="rgba(0,0,0,0)"),
+            margin=dict(l=25,r=25,t=55,b=30)
+        )
+        fig.update_xaxes(gridcolor="#edf2f7",linecolor="#dbe6f0")
+        fig.update_yaxes(gridcolor="#edf2f7",linecolor="#dbe6f0")
+    except Exception: pass
+    return _dashboard_plotly_original(fig,*args,**kwargs)
+st.plotly_chart=_dashboard_plotly
+
 st.title("🏗️ Central de Gestão de Obras")
 st.markdown('<div class="small">RDO • Horas-Homem • Máquinas • Caminhões • Combustível • Produtividade</div>',unsafe_allow_html=True)
 
