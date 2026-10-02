@@ -1,5 +1,6 @@
 
 import streamlit as st
+import requests
 import pandas as pd
 import numpy as np
 from datetime import timedelta
@@ -130,6 +131,114 @@ div[data-testid="stWidgetLabel"] p, label[data-testid="stWidgetLabel"] p {
 }
 </style>
 """, unsafe_allow_html=True)
+
+
+st.markdown("""
+<style>
+[data-testid="stMetricLabel"],[data-testid="stMetricLabel"] * {
+ color:#FFFFFF !important; opacity:1 !important; font-weight:800 !important;
+}
+[data-testid="stMetricValue"],[data-testid="stMetricValue"] * {
+ color:#FFFFFF !important; opacity:1 !important; font-weight:800 !important;
+}
+[data-testid="stWidgetLabel"],[data-testid="stWidgetLabel"] *,label,label * {
+ color:#E2E8F0 !important; opacity:1 !important; font-weight:700 !important;
+}
+[data-testid="stCaptionContainer"],[data-testid="stCaptionContainer"] * {
+ color:#CBD5E1 !important; opacity:1 !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+
+# ---------- TEMPO ATUAL / PREVISÃO ONLINE ----------
+@st.cache_data(ttl=900, show_spinner=False)
+def obter_clima_online(cidade):
+    """Consulta Open-Meteo sem chave de API. Atualiza a cada ~15 min."""
+    if not cidade or str(cidade).strip() == "":
+        return None
+    nome = str(cidade).strip()
+    # Limpa nomes comuns vindos do cadastro de obras
+    for termo in ["OPUB", "25.11"]:
+        nome = nome.replace(termo, " ")
+    import re as _re
+    nome = _re.sub(r"\([^)]*\)", " ", nome)
+    nome = _re.sub(r"\s+", " ", nome).strip(" -")
+    # Tenta extrair a parte final mais provável como município
+    partes = [x.strip() for x in nome.split(" - ") if x.strip()]
+    if partes:
+        nome = partes[-1]
+
+    g = requests.get(
+        "https://geocoding-api.open-meteo.com/v1/search",
+        params={"name": nome, "count": 1, "language": "pt", "format": "json", "countryCode": "BR"},
+        timeout=10,
+    )
+    g.raise_for_status()
+    resultados = g.json().get("results", [])
+    if not resultados:
+        return None
+    loc = resultados[0]
+    lat, lon = loc["latitude"], loc["longitude"]
+
+    w = requests.get(
+        "https://api.open-meteo.com/v1/forecast",
+        params={
+            "latitude": lat, "longitude": lon,
+            "current": "temperature_2m,apparent_temperature,relative_humidity_2m,precipitation,rain,weather_code,wind_speed_10m",
+            "daily": "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum",
+            "timezone": "America/Sao_Paulo",
+            "forecast_days": 5,
+        },
+        timeout=10,
+    )
+    w.raise_for_status()
+    return {"local": loc, "dados": w.json()}
+
+def descricao_tempo(codigo):
+    mapa = {
+        0:"Céu limpo",1:"Predominantemente limpo",2:"Parcialmente nublado",3:"Nublado",
+        45:"Neblina",48:"Neblina com geada",51:"Garoa leve",53:"Garoa",55:"Garoa forte",
+        61:"Chuva leve",63:"Chuva moderada",65:"Chuva forte",71:"Neve leve",73:"Neve",
+        75:"Neve forte",80:"Pancadas leves",81:"Pancadas de chuva",82:"Pancadas fortes",
+        95:"Trovoadas",96:"Trovoadas com granizo",99:"Trovoadas fortes com granizo"
+    }
+    return mapa.get(int(codigo) if codigo is not None else -1, "Condição não identificada")
+
+def painel_clima_online(nome_obra):
+    st.markdown("## 🌤️ Tempo atual e previsão da obra")
+    st.caption("Consulta meteorológica online pela cidade da obra. O histórico oficial continua sendo o clima registrado no RDO.")
+    try:
+        clima = obter_clima_online(nome_obra)
+        if not clima:
+            st.info("Não consegui identificar automaticamente a cidade desta obra para consultar o tempo.")
+            return
+        loc, dados = clima["local"], clima["dados"]
+        atual = dados.get("current", {})
+        st.markdown(f"**📍 {loc.get('name','')} / {loc.get('admin1','')}**")
+        a,b,c,d,e = st.columns(5)
+        a.metric("TEMPERATURA", f"{atual.get('temperature_2m',0):.1f} °C")
+        b.metric("SENSAÇÃO", f"{atual.get('apparent_temperature',0):.1f} °C")
+        c.metric("UMIDADE", f"{atual.get('relative_humidity_2m',0):.0f}%")
+        d.metric("CHUVA AGORA", f"{atual.get('precipitation',0):.1f} mm")
+        e.metric("VENTO", f"{atual.get('wind_speed_10m',0):.1f} km/h")
+        st.info("☁️ " + descricao_tempo(atual.get("weather_code")))
+
+        daily=dados.get("daily",{})
+        if daily.get("time"):
+            import pandas as _pd
+            prev=_pd.DataFrame({
+                "Data": _pd.to_datetime(daily["time"]).strftime("%d/%m/%Y"),
+                "Condição": [descricao_tempo(x) for x in daily["weather_code"]],
+                "Mín. °C": daily["temperature_2m_min"],
+                "Máx. °C": daily["temperature_2m_max"],
+                "Prob. chuva": [f"{x:.0f}%" for x in daily["precipitation_probability_max"]],
+                "Chuva prevista (mm)": daily["precipitation_sum"],
+            })
+            st.markdown("### 📅 Previsão — próximos 5 dias")
+            st.dataframe(prev, use_container_width=True, hide_index=True)
+    except Exception:
+        st.warning("O serviço de clima não respondeu agora. Os demais dados do sistema continuam disponíveis.")
 
 st.title("🏗️ Central de Gestão de Obras")
 st.markdown('<div class="small">RDO • Horas-Homem • Máquinas • Caminhões • Combustível • Produtividade</div>',unsafe_allow_html=True)
@@ -358,3 +467,21 @@ if not cf.empty:
 else:
     st.info("Não há lançamentos climáticos para a obra/período selecionado.")
 
+
+
+# ---------- PAINEL METEOROLÓGICO ONLINE ----------
+try:
+    _obra_tempo = None
+    for _nome_var in ["obra_sel", "obra_selecionada", "obra_filtro", "obra"]:
+        if _nome_var in globals():
+            _v = globals()[_nome_var]
+            if isinstance(_v, str) and _v and _v.lower() not in ["todas", "todos", "geral"]:
+                _obra_tempo = _v
+                break
+    if _obra_tempo:
+        painel_clima_online(_obra_tempo)
+    else:
+        st.markdown("## 🌤️ Tempo atual das obras")
+        st.caption("Selecione uma obra específica nos filtros para consultar automaticamente o tempo atual e a previsão da cidade.")
+except Exception:
+    pass
